@@ -41,9 +41,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen flex items-center justify-center bg-[url('/bg.jpg')] bg-cover bg-center bg-no-repeat">
       <div className="max-w-md w-full space-y-8 p-8">
-        <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="bg-white/70 backdrop-blur-md rounded-xl shadow-lg p-8">
           <div className="text-center">
             <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center">
               <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,12 +113,6 @@ const Login = () => {
               )}
             </button>
           </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500">
-              For demo purposes: admin / hotel123
-            </p>
-          </div>
         </div>
       </div>
     </div>
