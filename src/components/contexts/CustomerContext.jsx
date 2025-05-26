@@ -12,6 +12,7 @@ export const useCustomer = () => {
 
 export const CustomerProvider = ({ children }) => {
   const [customers, setCustomers] = useState([]);
+  console.log(customers);
 
   useEffect(() => {
     // Load customers from localStorage

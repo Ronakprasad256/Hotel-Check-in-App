@@ -1,20 +1,23 @@
 import { useState } from 'react';
 import { useBooking } from './contexts/BookingContext';
 import PaymentModal from './PaymentModal';
+import { useAuth } from './contexts/AuthContext';
+import BookingDetailsModal from './BookingDetailsModal';
 
 const BookingList = () => {
-  const { getAllBookings, deleteBooking, updateBooking } = useBooking();
+  const { deleteBooking } = useBooking();
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedBookingForPayment, setSelectedBookingForPayment] = useState(null);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
-  const allBookings = getAllBookings();
+  const { bookingsCheckInData } = useAuth();
 
-  const filteredBookings = allBookings.filter(booking => {
+  const filteredBookings = bookingsCheckInData?.filter(booking => {
     const matchesFilter = filter === 'all' || booking.status === filter;
     const matchesSearch = booking.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         booking.customerPhone.includes(searchTerm) ||
-                         booking.id.toString().includes(searchTerm);
+      booking.customerPhone.includes(searchTerm) ||
+      booking.id.toString().includes(searchTerm);
     return matchesFilter && matchesSearch;
   });
 
@@ -115,12 +118,12 @@ const BookingList = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredBookings.map((booking) => (
-                  <tr key={booking.id} className="hover:bg-gray-50">
+                {filteredBookings.map((booking, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          Booking #{booking.id}
+                          Booking #{booking.bookingId}
                         </div>
                         <div className="text-sm text-gray-500">
                           {booking.numberOfGuests} Guest{booking.numberOfGuests > 1 ? 's' : ''}
@@ -174,24 +177,8 @@ const BookingList = () => {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => {
-                            const details = `
-Booking #${booking.id}
-Customer: ${booking.customerName}
-Phone: ${booking.customerPhone}
-Email: ${booking.customerEmail || 'Not provided'}
-Address: ${booking.customerAddress || 'Not provided'}
-ID Proof: ${booking.idProofType} - ${booking.idProofNumber}
-Room: ${getRoomTypeLabel(booking.roomType)}${booking.roomNumber ? ` (${booking.roomNumber})` : ''}
-Guests: ${booking.numberOfGuests}
-Check-in: ${formatDate(booking.checkInDate)}
-Check-out: ${formatDate(booking.checkOutDate)}
-Rate: ₹${booking.roomRate}/night
-Status: ${booking.status}
-
-Additional Guests:
-${booking.guests?.map(guest => `- ${guest.name} (Age: ${guest.age})`).join('\n') || 'None'}
-                            `;
-                            alert(details);
+                            setSelectedBooking(booking);
+                            setIsDetailsModalOpen(true);
                           }}
                           className="text-blue-600 hover:text-blue-900"
                         >
@@ -236,6 +223,16 @@ ${booking.guests?.map(guest => `- ${guest.name} (Age: ${guest.age})`).join('\n')
           </div>
         </div>
       </div>
+
+      {/* Booking Details Modal */}
+      <BookingDetailsModal
+        booking={selectedBooking}
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedBooking(null);
+        }}
+      />
     </div>
   );
 };

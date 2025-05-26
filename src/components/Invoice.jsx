@@ -1,13 +1,13 @@
 import { useRef } from 'react';
-
+import { HOTEL_NAME, HOTEL_ADDRESS, HOTEL_PHONE, HOTEL_EMAIL, GST_NUMBER } from '../constents/constents';
 const Invoice = ({ booking, onClose }) => {
   const printRef = useRef();
-
-  const hotelName = import.meta.env.VITE_HOTEL_NAME || 'Grand Palace Hotel';
-  const hotelAddress = import.meta.env.VITE_HOTEL_ADDRESS || '123 Luxury Street, City Center, State 12345';
-  const hotelPhone = import.meta.env.VITE_HOTEL_PHONE || '+1-234-567-8900';
-  const hotelEmail = import.meta.env.VITE_HOTEL_EMAIL || 'info@grandpalace.com';
-  const gstNumber = import.meta.env.VITE_GST_NUMBER || '22AAAAA0000A1Z5';
+console.log(booking)
+  const hotelName = HOTEL_NAME || '';
+  const hotelAddress = HOTEL_ADDRESS || '';
+  const hotelPhone = HOTEL_PHONE || '';
+  const hotelEmail = HOTEL_EMAIL || '';
+  const gstNumber = GST_NUMBER || '';
 
   const handlePrint = () => {
     const printContent = printRef.current;
@@ -27,15 +27,25 @@ const Invoice = ({ booking, onClose }) => {
     });
   };
 
-  const formatDateTime = (dateString) => {
-    return new Date(dateString).toLocaleString('en-IN', {
+  const formatDateTime = (dateString, onlyDate = false) => {
+    const date = new Date(dateString);
+
+    if (onlyDate) {
+      // Return YYYY-MM-DD format
+      return date.toISOString().split('T')[0];
+    }
+
+    // Return full formatted date and time in en-IN format
+    return date.toLocaleString('en-IN', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      hour12: true
     });
   };
+
 
   const getRoomTypeLabel = (roomType) => {
     const roomLabels = {
@@ -95,8 +105,8 @@ const Invoice = ({ booking, onClose }) => {
               <div className="text-right">
                 <h2 className="text-2xl font-bold text-gray-900">TAX INVOICE</h2>
                 <div className="mt-2 text-gray-600">
-                  <p><span className="font-semibold">Invoice No:</span> {booking.invoiceNumber}</p>
-                  <p><span className="font-semibold">Date:</span> {formatDateTime(booking.invoiceDate)}</p>
+                  <p><span className="font-semibold">Invoice No:</span> {booking?.invoiceNumber}</p>
+                  <p><span className="font-semibold">Date:</span> {formatDate(booking?.createdAt)}</p>
                 </div>
               </div>
             </div>
@@ -107,12 +117,12 @@ const Invoice = ({ booking, onClose }) => {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Bill To:</h3>
               <div className="text-gray-700">
-                <p className="font-semibold text-lg">{booking.customerName}</p>
-                {booking.customerAddress && <p className="mt-1">{booking.customerAddress}</p>}
-                <p className="mt-1">Phone: {booking.customerPhone}</p>
-                {booking.customerEmail && <p>Email: {booking.customerEmail}</p>}
+                <p className="font-semibold text-lg">{booking?.customerName}</p>
+                {booking?.customerAddress && <p className="mt-1">{booking?.customerAddress}</p>}
+                <p className="mt-1">Phone: {booking?.customerPhone}</p>
+                {booking?.customerEmail && <p>Email: {booking?.customerEmail}</p>}
                 <p className="mt-2">
-                  <span className="font-semibold">ID Proof:</span> {getIdProofLabel(booking.idProofType)} - {booking.idProofNumber}
+                  <span className="font-semibold">ID Proof:</span> {getIdProofLabel(booking?.idProofType)} - {booking?.idProofNumber}
                 </p>
               </div>
             </div>
@@ -120,29 +130,29 @@ const Invoice = ({ booking, onClose }) => {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Booking Details:</h3>
               <div className="text-gray-700">
-                <p><span className="font-semibold">Booking ID:</span> #{booking.id}</p>
-                <p><span className="font-semibold">Room Type:</span> {getRoomTypeLabel(booking.roomType)}</p>
-                {booking.roomNumber && <p><span className="font-semibold">Room Number:</span> {booking.roomNumber}</p>}
-                <p><span className="font-semibold">Number of Guests:</span> {booking.numberOfGuests}</p>
-                <p><span className="font-semibold">Check-in Date:</span> {formatDate(booking.checkInDate)}</p>
-                <p><span className="font-semibold">Check-out Date:</span> {formatDate(booking.actualCheckOutDate)}</p>
-                <p><span className="font-semibold">Number of Nights:</span> {booking.nights}</p>
+                <p><span className="font-semibold">Booking ID:</span> {booking?.bookingId}</p>
+                <p><span className="font-semibold">Room Type:</span> {getRoomTypeLabel(booking?.roomType)}</p>
+                {booking?.roomNumber && <p><span className="font-semibold">Room Number:</span> {booking?.roomNumber}</p>}
+                <p><span className="font-semibold">Number of Guests:</span> {booking?.numberOfGuests}</p>
+                <p><span className="font-semibold">Check-in Date:</span> {formatDate(booking?.checkInDate)}</p>
+                <p><span className="font-semibold">Check-out Date:</span> {formatDate(booking?.actualCheckOutDate)}</p>
+                <p><span className="font-semibold">Number of Nights:</span> {booking?.nights}</p>
               </div>
             </div>
           </div>
 
           {/* Guest Details */}
-          {booking.guests && booking.guests.length > 0 && (
+          {booking?.guests && booking?.guests?.length > 0 && (
             <div className="mb-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Additional Guests:</h3>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {booking.guests.map((guest, index) => (
-                    <div key={guest.id || index} className="text-gray-700">
-                      <p className="font-semibold">{guest.name}</p>
-                      <p className="text-sm">Age: {guest.age}</p>
-                      {guest.idProofNumber && (
-                        <p className="text-sm">{getIdProofLabel(guest.idProofType)}: {guest.idProofNumber}</p>
+                  {booking?.guests?.map((guest, index) => (
+                    <div key={guest?.id || index} className="text-gray-700">
+                      <p className="font-semibold">{guest?.name}</p>
+                      <p className="text-sm">Age: {guest?.age}</p>
+                      {guest?.idProofNumber && (
+                        <p className="text-sm">{getIdProofLabel(guest?.idProofType)}: {guest?.idProofNumber}</p>
                       )}
                     </div>
                   ))}
@@ -166,35 +176,35 @@ const Invoice = ({ booking, onClose }) => {
               <tbody>
                 <tr>
                   <td className="border border-gray-300 px-4 py-2">
-                    {getRoomTypeLabel(booking.roomType)} Accommodation
-                    {booking.roomNumber && ` (Room ${booking.roomNumber})`}
+                    {getRoomTypeLabel(booking?.roomType)} Accommodation
+                    {booking?.roomNumber && ` (Room ${booking?.roomNumber})`}
                   </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">{booking.nights} night{booking.nights > 1 ? 's' : ''}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">₹{booking.roomRate.toFixed(2)}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">₹{booking.bill.roomCharges.toFixed(2)}</td>
+                  <td className="border border-gray-300 px-4 py-2 text-center">{booking?.nights} night{booking?.nights > 1 ? 's' : ''}</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">₹{booking?.roomRate.toFixed(2)}</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">₹{booking?.bill?.roomCharges.toFixed(2)}</td>
                 </tr>
 
-                {booking.bill.additionalCharges > 0 && (
+                {booking?.bill?.additionalCharges > 0 && (
                   <tr>
                     <td className="border border-gray-300 px-4 py-2">
                       Additional Charges
-                      {booking.additionalChargesDescription && ` (${booking.additionalChargesDescription})`}
+                      {booking?.additionalChargesDescription && ` (${booking?.additionalChargesDescription})`}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">1</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">₹{booking.bill.additionalCharges.toFixed(2)}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">₹{booking.bill.additionalCharges.toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">₹{booking?.bill?.additionalCharges.toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">₹{booking?.bill?.additionalCharges.toFixed(2)}</td>
                   </tr>
                 )}
 
-                {booking.bill.discount > 0 && (
+                {booking?.bill?.discount > 0 && (
                   <tr>
                     <td className="border border-gray-300 px-4 py-2">
                       Discount
-                      {booking.discountDescription && ` (${booking.discountDescription})`}
+                      {booking?.discountDescription && ` (${booking?.discountDescription})`}
                     </td>
                     <td className="border border-gray-300 px-4 py-2 text-center">1</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">-₹{booking.bill.discount.toFixed(2)}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">-₹{booking.bill.discount.toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">-₹{booking?.bill?.discount.toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">-₹{booking?.bill?.discount.toFixed(2)}</td>
                   </tr>
                 )}
               </tbody>
@@ -209,19 +219,19 @@ const Invoice = ({ booking, onClose }) => {
                   <tbody>
                     <tr>
                       <td className="py-2 text-right font-semibold">Subtotal:</td>
-                      <td className="py-2 text-right">₹{booking.bill.totalBeforeTax.toFixed(2)}</td>
+                      <td className="py-2 text-right">₹{booking?.bill?.totalBeforeTax.toFixed(2)}</td>
                     </tr>
                     <tr>
                       <td className="py-2 text-right">CGST (6%):</td>
-                      <td className="py-2 text-right">₹{booking.bill.cgst.toFixed(2)}</td>
+                      <td className="py-2 text-right">₹{booking?.bill?.cgst.toFixed(2)}</td>
                     </tr>
                     <tr>
                       <td className="py-2 text-right">SGST (6%):</td>
-                      <td className="py-2 text-right">₹{booking.bill.sgst.toFixed(2)}</td>
+                      <td className="py-2 text-right">₹{booking?.bill?.sgst.toFixed(2)}</td>
                     </tr>
                     <tr className="border-t-2 border-gray-300">
                       <td className="py-3 text-right text-xl font-bold">Grand Total:</td>
-                      <td className="py-3 text-right text-xl font-bold">₹{booking.bill.grandTotal.toFixed(2)}</td>
+                      <td className="py-3 text-right text-xl font-bold">₹{booking?.bill?.grandTotal.toFixed(2)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -232,12 +242,12 @@ const Invoice = ({ booking, onClose }) => {
           {/* Amount in Words */}
           <div className="mb-8">
             <p className="text-gray-700">
-              <span className="font-semibold">Amount in Words:</span> {numberToWords(booking.bill.grandTotal)} Rupees Only
+              <span className="font-semibold">Amount in Words:</span> {numberToWords(booking?.bill?.grandTotal)} Rupees Only
             </p>
           </div>
 
           {/* Terms and Signature */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <h4 className="font-semibold text-gray-900 mb-2">Terms and Conditions:</h4>
               <ul className="text-sm text-gray-700 space-y-1">
@@ -255,7 +265,7 @@ const Invoice = ({ booking, onClose }) => {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Footer */}
           <div className="mt-8 pt-4 border-t border-gray-300 text-center text-sm text-gray-500">

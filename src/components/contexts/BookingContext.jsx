@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-
+import { useAuth } from './AuthContext';
 const BookingContext = createContext();
-
+import { HOTEL_ID, HOTEL_NAME, HOTEL_ADDRESS, HOTEL_PHONE, HOTEL_EMAIL, HOTEL_FAX } from '../../constents/constents';
 export const useBooking = () => {
   const context = useContext(BookingContext);
   if (!context) {
@@ -13,6 +13,9 @@ export const useBooking = () => {
 export const BookingProvider = ({ children }) => {
   const [bookings, setBookings] = useState([]);
   const [nextBookingId, setNextBookingId] = useState(1);
+  const { handleCheckIn, user, bookingsCheckIn, bookingsCheckOutData } = useAuth();
+  // const { bookingsCheckIn, bookingsCheckOut } = useAuth();
+
 
   useEffect(() => {
     // Load bookings from localStorage
@@ -44,17 +47,30 @@ export const BookingProvider = ({ children }) => {
     } else if (checkInDate < now) {
       status = 'checked-in'; // Past date (shouldn't happen but handle gracefully)
     }
-
+    function generateBookingId() {
+      const timestamp = Date.now().toString().slice(-7); // last 7 digits of timestamp
+      const random = Math.floor(100 + Math.random() * 900); // 3-digit random number
+      return Number(timestamp + random); // 10-digit number
+    }
     const newBooking = {
       id: nextBookingId,
+      bookingId: generateBookingId(),
       ...bookingData,
       bookingDate: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       status,
       bookingType: checkInDate > now ? 'advance' : 'walk-in',
-      paymentStatus: bookingData.paymentStatus || 'pending'
+      paymentStatus: bookingData.paymentStatus || 'pending',
+      hotelId: HOTEL_ID || '',
+      hotelName: HOTEL_NAME || '',
+      hotelAddress: HOTEL_ADDRESS || '',
+      hotelPhone: HOTEL_PHONE || '',
+      hotelEmail: HOTEL_EMAIL || '',
+      hotelFax: HOTEL_FAX || '',
+      uid: user?.uid,
     };
 
+    handleCheckIn(newBooking);
     setBookings(prev => [...prev, newBooking]);
     setNextBookingId(prev => prev + 1);
     return newBooking;
@@ -119,23 +135,30 @@ export const BookingProvider = ({ children }) => {
   };
 
   const getBookingsByDateRange = (startDate, endDate) => {
-    return bookings.filter(booking => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (!Array.isArray(bookingsCheckOutData)) return [];
+
+    return bookingsCheckOutData.filter(booking => {
+      if (!booking.bookingDate) return false;
       const bookingDate = new Date(booking.bookingDate);
-      const start = new Date(startDate);
-      const end = new Date(endDate);
       return bookingDate >= start && bookingDate <= end;
     });
   };
 
+
+
   const getRevenueByDateRange = (startDate, endDate) => {
     const rangeBookings = getBookingsByDateRange(startDate, endDate);
+
     return rangeBookings.reduce((total, booking) => {
-      if (booking.bill && booking.bill.grandTotal) {
-        return total + booking.bill.grandTotal;
-      }
-      return total;
+      const grandTotal = booking?.bill?.grandTotal ?? 0;
+      return total + grandTotal;
     }, 0);
   };
+
+
 
   const checkInBooking = (bookingId) => {
     updateBooking(bookingId, {

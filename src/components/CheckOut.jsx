@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useBooking } from './contexts/BookingContext';
 import Invoice from './Invoice';
-
+import { useAuth } from './contexts/AuthContext';
 const CheckOut = () => {
   const { getActiveBookings, checkoutBooking } = useBooking();
   const [selectedBooking, setSelectedBooking] = useState('');
@@ -16,15 +16,17 @@ const CheckOut = () => {
   const [showInvoice, setShowInvoice] = useState(false);
   const [generatedInvoice, setGeneratedInvoice] = useState(null);
 
-  const activeBookings = getActiveBookings();
-  const selectedBookingData = activeBookings.find(b => b.id === parseInt(selectedBooking));
+  const { handleCheckOut, bookingsCheckInData, updateBookingField, bookingsCheckOutData } = useAuth();
+
+  // const activeBookings = getActiveBookings();
+  const selectedBookingData = bookingsCheckInData.find(b => b.bookingId === parseInt(selectedBooking));
 
   const handleBookingChange = (e) => {
     const bookingId = e.target.value;
     setSelectedBooking(bookingId);
-
+    console.log(bookingId);
     if (bookingId) {
-      const booking = activeBookings.find(b => b.id === parseInt(bookingId));
+      const booking = bookingsCheckInData.find(b => b.bookingId === parseInt(bookingId));
       if (booking && booking.checkInDate && booking.checkOutDate) {
         const checkIn = new Date(booking.checkInDate);
         const checkOut = new Date(booking.checkOutDate);
@@ -35,6 +37,8 @@ const CheckOut = () => {
           nights: nights,
           actualCheckOutDate: booking.checkOutDate || new Date().toISOString().split('T')[0]
         }));
+
+
       }
     }
   };
@@ -73,7 +77,7 @@ const CheckOut = () => {
     };
   };
 
-  const handleCheckOut = () => {
+  const handleNewCheckOut = () => {
     if (!selectedBookingData) {
       alert('Please select a booking to checkout');
       return;
@@ -88,9 +92,13 @@ const CheckOut = () => {
     };
 
     const updatedBooking = checkoutBooking(selectedBookingData.id, invoiceData);
-
+    console.log(updatedBooking);
     if (updatedBooking) {
       setGeneratedInvoice(updatedBooking);
+
+      handleCheckOut(updatedBooking);
+      console.log(updatedBooking);
+      updateBookingField('bookingId', updatedBooking.bookingId, { status: 'checked-out', paymentStatus: 'paid' });
       setShowInvoice(true);
 
       // Reset form
@@ -108,6 +116,12 @@ const CheckOut = () => {
 
   const bill = calculateBill();
 
+  const handleInvoice = (booking) => {
+    setShowInvoice(true)
+    setGeneratedInvoice(booking);
+
+  }
+
   if (showInvoice && generatedInvoice) {
     return (
       <Invoice
@@ -118,7 +132,7 @@ const CheckOut = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto relative">
       <div className="bg-white shadow-lg rounded-lg">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">Customer Check-Out</h2>
@@ -126,7 +140,7 @@ const CheckOut = () => {
         </div>
 
         <div className="p-6">
-          {activeBookings.length === 0 ? (
+          {bookingsCheckInData.length === 0 ? (
             <div className="text-center py-12">
               <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -147,9 +161,9 @@ const CheckOut = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Choose a booking...</option>
-                  {activeBookings.map(booking => (
-                    <option key={booking.id} value={booking.id}>
-                      #{booking.id} - {booking.customerName} - Room {booking.roomNumber || booking.roomType}
+                  {bookingsCheckInData?.filter(booking => booking.status === 'checked-in').map(booking => (
+                    <option key={booking.bookingId} value={booking.bookingId}>
+                      #{booking.bookingId} - {booking.customerName} - Room {booking.roomNumber || booking.roomType}
                       (Check-in: {new Date(booking.checkInDate).toLocaleDateString('en-IN')})
                     </option>
                   ))}
@@ -318,7 +332,7 @@ const CheckOut = () => {
                   {/* Checkout Button */}
                   <div className="flex justify-end">
                     <button
-                      onClick={handleCheckOut}
+                      onClick={handleNewCheckOut}
                       className="px-6 py-3 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
                       Complete Check-Out & Generate Invoice
@@ -330,6 +344,20 @@ const CheckOut = () => {
           )}
         </div>
       </div>
+      <div className='mt-10 bg-white p-4 rounded-lg shadow-xl'  >
+        <h2 className='text-2xl font-bold text-gray-900'>Check Out History</h2>
+        {bookingsCheckOutData?.filter(booking => booking.status === 'checked-out').map(booking => (
+          <div key={booking.bookingId} className='p-4 border-b border-gray-200 flex justify-between items-center'>
+            #{booking.bookingId} - {booking.customerName} - Room {booking.roomNumber || booking.roomType}
+            (Check-in: {new Date(booking.checkInDate).toLocaleDateString('en-IN')})
+            <button className='bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600' onClick={() => handleInvoice(booking)}>View Invoice</button>
+          </div>
+        ))}
+      </div>
+      {showInvoice && < Invoice
+        booking={generatedInvoice}
+        onClose={() => setShowInvoice(false)}
+      />}
     </div>
   );
 };

@@ -1,13 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCustomer } from './contexts/CustomerContext';
 import { useBooking } from './contexts/BookingContext';
-
+import { useAuth } from './contexts/AuthContext';
 const CustomerManagement = () => {
   const { customers, searchCustomers, getCustomerBookings, getLoyaltyDiscount } = useCustomer();
   const { getAllBookings } = useBooking();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [filterTier, setFilterTier] = useState('all');
+
+  const { bookingsCheckInData, bookingsCheckOutData } = useAuth();
+  const [mergedBookings, setMergedBookings] = useState([]);
+  
+  useEffect(() => {
+    const mergedBookings = bookingsCheckInData.map((item, index) => ({
+      ...item,
+      ...bookingsCheckOutData[index]
+    }));
+    setMergedBookings(mergedBookings);
+  }, [bookingsCheckInData, bookingsCheckOutData]);
 
   const allBookings = getAllBookings();
   const filteredCustomers = searchTerm
@@ -177,13 +188,12 @@ const CustomerManagement = () => {
                           {booking.bill ? formatCurrency(booking.bill.grandTotal) : 'Pending'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            booking.status === 'checked-in' ? 'bg-red-100 text-red-800' :
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${booking.status === 'checked-in' ? 'bg-red-100 text-red-800' :
                             booking.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
+                              'bg-green-100 text-green-800'
+                            }`}>
                             {booking.status === 'checked-in' ? 'Active' :
-                             booking.status === 'confirmed' ? 'Confirmed' : 'Completed'}
+                              booking.status === 'confirmed' ? 'Confirmed' : 'Completed'}
                           </span>
                         </td>
                       </tr>

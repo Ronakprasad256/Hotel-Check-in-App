@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useBooking } from './contexts/BookingContext';
 import { useRoom } from './contexts/RoomContext';
 import { useCustomer } from './contexts/CustomerContext';
+import CheckInSuccessModal from './CheckInSuccessModal';
 
 const CheckIn = () => {
   const { addBooking } = useBooking();
@@ -36,6 +37,8 @@ const CheckIn = () => {
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
 
   const [showGuestForm, setShowGuestForm] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successData, setSuccessData] = useState(null);
 
   // Check for existing customer when phone number changes
   useEffect(() => {
@@ -184,20 +187,23 @@ const CheckIn = () => {
 
     const booking = addBooking(bookingData);
 
-    let message = `Booking created successfully! Booking ID: ${booking.id}`;
-    if (existingCustomer) {
-      message += `\n\nWelcome back ${customer.name}!`;
-      message += `\nLoyalty Status: ${customer.loyaltyTier}`;
-      message += `\nTotal Bookings: ${customer.totalBookings}`;
-      if (loyaltyDiscount > 0) {
-        message += `\nLoyalty Discount Applied: ${loyaltyDiscount}% (₹${discountAmount.toFixed(2)})`;
+    // Set success data for modal
+    setSuccessData({
+      booking: {
+        ...booking,
+        roomType: formData.roomType,
+        roomNumber: formData.roomNumber
+      },
+      customer: {
+        name: customer.name,
+        loyaltyTier: customer.loyaltyTier,
+        totalBookings: customer.totalBookings,
+        isExisting: !!existingCustomer,
+        loyaltyDiscount: loyaltyDiscount,
+        discountAmount: discountAmount
       }
-    } else {
-      message += `\n\nWelcome to our hotel ${customer.name}!`;
-      message += `\nYou've been enrolled in our loyalty program as a ${customer.loyaltyTier} member.`;
-    }
-
-    alert(message);
+    });
+    setShowSuccessModal(true);
 
     // Reset form
     setFormData({
@@ -313,7 +319,20 @@ const CheckIn = () => {
                 ))}
               </select>
             </div>
-
+ <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ID Proof Number *
+              </label>
+              <input
+                type="text"
+                name="idProofNumber"
+                value={formData.idProofNumber}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter ID proof number"
+              />
+            </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Address
@@ -328,20 +347,7 @@ const CheckIn = () => {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ID Proof Number *
-              </label>
-              <input
-                type="text"
-                name="idProofNumber"
-                value={formData.idProofNumber}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter ID proof number"
-              />
-            </div>
+           
           </div>
 
           {/* Booking Details */}
@@ -473,7 +479,7 @@ const CheckIn = () => {
               </div>
 
               {/* Guest List */}
-              {formData.guests.map((guest, index) => (
+              {formData.guests.map((guest) => (
                 <div key={guest.id} className="bg-gray-50 p-4 rounded-md mb-3">
                   <div className="flex justify-between items-start">
                     <div>
@@ -585,6 +591,14 @@ const CheckIn = () => {
           </div>
         </form>
       </div>
+
+      {/* Success Modal */}
+      <CheckInSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        booking={successData?.booking}
+        customer={successData?.customer}
+      />
     </div>
   );
 };
